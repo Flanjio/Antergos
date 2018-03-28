@@ -24,7 +24,7 @@ Installation Nvidia Optimus, config, logiciel.
   reflector --verbose -l 5 --sort rate --save /etc/pacman.d/mirrorlist
   
 *** Theme ***
-XFCE4
-Theme: Arc-Dark
-Icons : Papirus-Dark
-Font: Open Sans Light 11
+ - Environnement : XFCE
+ - Theme: Arc-Dark
+ - Icons : Papirus-Dark
+ - Font: Open Sans Light 11
