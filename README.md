@@ -28,3 +28,4 @@ Installation Nvidia Optimus, config, logiciel.
  - Theme: Arc-Dark
  - Icons : Papirus-Dark
  - Font: Open Sans Light 11
+ - Dock : Plank
