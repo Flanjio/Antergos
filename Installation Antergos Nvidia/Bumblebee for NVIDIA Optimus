@@ -1,0 +1,363 @@
+Introduction
+
+Nvidia Optimus are probably the best video cards currently supported by Linux. They provide both an excellent graphical acceleration and an extreme power saving, whichever is needed. Both features are provided by Bumblebee.
+
+Some computer may need BIOS adjustments before Bumblebee installation. See Two BIOS types section.
+
+Bumblebee installation and removal are simple and straightforward processes. See Installation et Remove Bumblebee sections.
+
+The text speaks about a fresh Bumblebee installation. It is also a repairing tool. If Bumblebee is already installed but you're unsure about its state, simply install Bumblebee again. It does not hurt a system in any way.
+
+Bumblebee's power saving feature was missing in the mid of 2015. See Missing power off section.
+
+The guide may be used to install Bumblebee in other distributions, which use unmodified Arch Linux repositories. In Arch Linux itself. In Revenge OS with Zen Installer. In Bluestar Linux, downloads at SourceForge. In Architect Linux (discontinued, but still available). In Arch Anywhere or Feliz.
+
+The 1st editionof the article, not available anymore in the Wiki, was visited 12000+ fois.
+Do I have an Optimus card?
+
+First things first. An excerpt from Bumblebee Project Wiki Troubleshooting section:
+
+"Only laptops have these kind of nVidia Optimus card, so this project won't apply to desktops (for now). Cards from the 4xxM and newer series are all Optimus-enabled. le M stands for "Mobile". But having a 4xxM card isn't enough to be sure that you're having an Optimus laptop. There must also be an integrated video controller in your processor. To check that, run this command in a terminal:
+
+    lspci -vnn | grep '\''[030[02]\]'
+
+If it outputs two lines, then you're likely having an Optimus laptop. Else..."
+
+...this article is of no help for your card.
+
+On NVIDIA Optimus two output lines look like:
+
+    00:02.0 VGA compatible controller [0300]: Intel Corporation Haswell-ULT Integrated Graphics Controller [8086:0a16] (rev 09) (prog-if 00 [VGA controller])
+
+et
+
+    01:00.0 3D controller [0302]: NVIDIA Corporation GK107M [GeForce GT 750M] [10de:0fe4] (rev ff) (prog-if ff)
+
+The first line starts with 00:02.0. It corresponds to Intel GPU.
+
+The second line starts with 01:00.0. It corresponds to Nvidia GPU.
+
+Your Intel and Nvidia make and model will obviously be different from this example.
+
+Take note of your nVidia model because the driver version you install will depend on it (see the section, Do I Have Legacy or Current Hardware?).
+Two BIOS types
+
+For the purpose of this guide let's distinguish two BIOS types:
+
+    BIOS doesn't control video card and doesn't mention it
+    BIOS tries to control integrated and/or discrete video cards
+
+ 
+
+1st type BIOS is the most Bumblebee-friendly. It doesn't require to enter BIOS Setup utility, to configure or change anything in BIOS. Just boot the computer normally and, if possible, make sure it runs on xf86-video-intel video driver. It should be so by default. Nothing else is required.
+
+2nd type BIOS is less Bumblebee-friendly. It requires to enter BIOS Setup utility and make some adjustments within it. Before and after Bumblebee installation. All BIOS changes in the guide refer only to the 2nd BIOS type. Make sure the computer runs on xf86-video-intel.
+
+Briefly. Bumblebee installation on:
+
+    1st type BIOS doesn't require any change in BIOS setup
+    2nd type BIOS may require some changes in BIOS setup before and after Bmb installation
+
+Installation
+Disable and remove Nouveau
+
+Edit 2017-07-14: Intel + Nouveau combination is deprecated. It is not supported by Bumblebee anymore. Intel + Nouveau support can be dropped from Bumblebee at any time. Bumblebee supports Intel + Nvidia combination only.
+
+Nouveau video driver causes many troubles on NVIDIA Optimus cards. Unbootable system, crashes during boot, a system that boots into unresponsive black screen with a white text cursor blinking in the top left corner, Cnchi and LiveDE freezes are only few of Nouveau effects.
+
+If you don't experience any of these issues, you may safely skip this section. Otherwise, keep reading on.
+
+Three steps are needed to remove Nouveau.
+
+1. Disable it during a boot from LiveMedia, to be able to start LiveDE with Cnchi and complete the installation
+
+2. Disable it on the first boot of the installed system, to be able to reach the graphical DE
+
+3. Physical Nuoveau package uninstallation on the first boot; the system will use Intel GPU on subsequent boots until Bumblebee installation
+
+Steps in details.
+
+1. Use the default LiveMedia boot menu option. Edit the boot line and add to it the following parameter:
+
+    modprobe.blacklist=nouveau
+
+Continue to boot normally.
+
+2. Disable Nouveau on the first boot of the installed system, exactly the same way as in previous step.
+
+3. Once you've reached the graphical DE, open the terminal and run the following command, to remove Nouveau completely:
+
+    sudo pacman -Rc xf86-video-nouveau
+
+It is a common mistake to use nouveau.modeset=0 parameter in attempt to exclude Nouveau. The parameter only shifts the responsibility for setting up the graphical mode from Xorg to the kernel. It doesn't prevent nouveau module from being loaded and used. Do not use this parameter.
+
+ 
+Install Antergos without Nvidia drivers
+
+Doing a fresh Antergos installation, make sure to not install proprietary Nvidia drivers. The option installs drivers for single-GPU, non-hybrid video cards, with NVIDIA GPU only. It does not install drivers for double-GPU, hybrid video cards with NVIDIA and Intel GPUs.
+
+Leave installer's Graphic drivers (Proprietary) switch in the default OFF position. Simply don't touch it:
+
+Failing to do so will result in unbootable NVIDIA Optimus system.
+
+With Graphic drivers (Proprietary) switched OFF, Antergos will install Intel and Nouveau graphic drivers.
+
+By default, Nvidia GPU is never active, or switched on, in Optimus computers with the 1st type BIOS. Nvidia GPU remains unused and switched off until it is activated by proprietary Nvidia or by free Nouveau drivers.
+
+Bumblebee switches Nvidia GPU ON et OFF automatically, whichever is needed.
+
+ 
+Disable Optimus, 2nd type BIOS only
+
+The owners of the 1st type BIOS may safely skip this section.
+
+After the installation has completed reboot your system, and enter the BIOS configuration utility. Most Nvidia Optimus cards run alongside Intel integrated graphics. Find your display settings, and select "Intel Integrated", or something similar - just make sure that Optimus and Discrete are not enabled. Also, make sure that the setting below it, "Detection by OS" setting is disabled. After this step has completed, you may reboot, and enter your new install of Antergos.
+Enable [multilib] repo
+
+The repo is already enabled by default in recent Antergos releases. If you install on native Arch Linux, Architect, Bridge, other systems which use unmodified Arch repos, then edit the /etc/pacman.conf file and uncomment the repo.
+Fully upgrade the system
+
+    yaourt -Syyua
+
+Install Bumblebee
+
+On modern hardware, with current drivers:
+
+    sudo pacman -S bumblebee mesa xf86-video-intel nvidia lib32-nvidia-utils lib32-virtualgl nvidia-settings bbswitch
+
+On older hardware, with 340.xx legacy drivers:
+
+    sudo pacman -S bumblebee mesa xf86-video-intel nvidia-340xx nvidia-340xx-utils lib32-nvidia-340xx-utils lib32-virtualgl bbswitch
+
+On even older hardware, with 304.xx legacy drivers:
+
+    sudo pacman -S bumblebee mesa xf86-video-intel nvidia-304xx nvidia-304xx-utils lib32-nvidia-304xx-utils lib32-virtualgl bbswitch
+
+Add yourself to bumblebee group
+
+Any user that is supposed to use Bumblebee must be added to this group. The user must also be a member of the video group - it is usually so by default, but not always.
+
+    sudo gpasswd -a $USER bumblebee
+
+    sudo gpasswd -a $USER video
+
+Enable bumblebeed service
+
+Notice the final d (from daemon) letter in the service's name. The step may be skipped if the next step will be executed.
+
+    sudo systemctl enable bumblebeed.service
+
+ 
+
+Install power saving patch
+
+Only if needed. The patch is described in details below.
+
+The package is found at:
+
+bumblebee-3.2.1-11-x86_64.pkg.tar.xz
+
+    sudo pacman -U /path/to/package/bumblebee-3.2.1-11-x86_64.pkg.tar.xz
+
+With the package installed, pacman will issue the warning on subsequent upgrades. It may be safely ignored:
+
+    warning: bumblebee: local (3.2.1-11) is newer than community (3.2.1-10)
+
+Reboot the system
+
+    sudo shutdown -r now
+
+Enable Optimus, 2nd type BIOS only
+
+The owners of the 1st type BIOS may safely skip this section.
+
+Start up your computer, and once again, enter your BIOS utility configuration. Find the Display configuration and change it from "integrated graphics" to "Optimus". Leave the "Detected by OS" in the "Disabled" position.
+Missing power off
+
+Edit 2016.07: Somewhere in 2016.06 the issue has been solved upstream. If you install after this date, most probably the problem will not be present. Check it with the the test described here. There's no need to install the patch.
+
+Most time NVIDIA Optimus cards run on Intel GPU. It is done for power saving. Nvidia GPU is used only when explicitly instructed to do so - by placing the optirun command in front of the program's name. When optirun exits it should immediately switch Nvidia GPU off and turn back to Intel GPU. It does not happen recently. Nvidia is not switched off. The system continues to run on Nvidia.
+
+There's no power saving, computer becomes overheated, cooling fans are constantly spinning at max speed. Technically speaking, the issue is caused by the fact that nvidia_drm, nvidia_modeset et nvidia modules are not unloaded upon optirun termination.
+
+When the system runs on Intel GPU, three modules are not used and are not loaded. All are loaded only when optirun starts running. And should be unloaded on optirun termination. Which doesn't happen.
+
+Check if your system is affected by the issue. After startup open a terminal and run three commands, one after another:
+
+    optirun --status
+      Bumblebee status: Ready (3.2.1). X inactive. Discrete video card is off.
+    optirun pwd
+      /home/just
+    optirun --status
+      Bumblebee status: Ready (3.2.1). X inactive. Discrete video card is off.
+
+If after the last (third) command the Discrete video card is off, like in the example above, then the system is not affected by the issue. You may skip this section.
+
+If after the last (third) command the Discrete video card is on, then the system is affected by the issue. You may wish to solve it, either manually or automatically. Below is described how to do it.
+Turning Off Nvidia Manually
+
+First, let's try to shutdown Nvidia by hand. To be sure that we're facing with the issue described here; three modules must be listed exactly in the same order like in this example:
+
+    sudo rmmod nvidia_drm nvidia_modeset nvidia
+    sudo tee <<<OFF /proc/acpi/bbswitch
+
+The first command forces three modules to be unloaded. The second one switches Nvidia GPU off. Check Nvidia status again:
+
+    optirun --status
+      Bumblebee status: Ready (3.2.1). X inactive. Discrete video card is off.
+
+Let's run a bit more complicated test. It will switch Nvidia on and then back off, in one command:
+
+    optirun pwd && sleep 1 && sudo rmmod nvidia_drm nvidia_modeset nvidia && sudo tee <<<OFF /proc/acpi/bbswitch
+
+This method may be used to switch Nvidia off by hand.
+Turning Off Nvidia Automatically
+
+The method to solve the issue automatically was discussed in Arch Linux bugtracker here. It applies the same two commands seen in previous section.
+
+The advantage of the method is that there's no need to enter any command by hand in terminal, with elevated privileges. Optirun turns to work normally, as usual, automatically switching Nvidia ON and OFF when it starts and exits.
+
+The disadvantage is that you'll need to install a "homemade" package, unknown to regular Arch repos.
+
+The patch for fixing missing power saving can be found at:
+
+bumblebee-3.2.1-11-x86_64.pkg.tar.xz
+
+Download the file and install it normally with pacman, like any other package:
+
+    sudo pacman -U /path/to/package/bumblebee-3.2.1-11-x86_64.pkg.tar.xz
+
+The package has no dependencies. During installation it will issue three informational messages. They may be safely ignored.
+
+With the package installed, pacman and pamac will issue the warning on subsequent system's upgrades. It may be safely ignored as well:
+
+    warning: bumblebee: local (3.2.1-11) is newer than community (3.2.1-10)
+
+Important. Once the package is installed, computer must be rebooted. A simple logout-login is not enough.
+Fine tuning NVIDIA Optimus settings
+
+It is possible to fine-tune NVIDIA settings, by running the nvidia-settings utility on NVIDIA GPU
+
+    optirun -b none nvidia-settings -c :8
+
+The command is the only correct way to execute nvidia-settings on Optimus computers. nvidia-x-server-settings Any attempt to run nvidia-settings utility with a different syntax will fail.
+Adjust menu to run NVIDIA settings
+
+Once Bumblebee and proprietary NVIDIA drivers are installed, the menu entry to launch nvidia-settings utility is automatically created. It is called NVIDIA X Server Settings in the menu.
+
+This menu entry is wrong for NVIDIA Optimus.
+
+The menu is not configured correctly right after the installation. It executes the simple nvidia-settings command.
+
+If you select NVIDIA X Server Settings menu entry with the default content (command), you will be adviced to run nvidia-xconfig utility, to fix the problem. Never do that. The problem does not exist. See the Warning section below for more info.
+
+If you want to run NVIDIA X Server Settings from menu, you have to edit the menu entry by hand, and replace the default incorrect command with the correct one.
+
+From:
+
+    /usr/bin/nvidia-settings
+
+To:
+
+    optirun -b none nvidia-settings -c :8
+
+Warning
+
+There's nvidia-xconfig utility, installed with Bumblebee among NVIDIA tools. Never run it on Optimus computers. It was designed for and works correctly on single-GPU NVIDIA cards only. It doesn't detect hybrid NVIDIA Optimus cards. It's a perfect Bumblebee killer. If executed, it immediately breaks Bumblebee configuration.
+Known Issues
+GeForce GTX 960M
+
+When rebooting your computer might not start again. To solve that issue add acpi_osi="!Windows 2015" as a kernel parameter. See issue #764(comment) on github.
+
+To make that change permanent in grub add in /etc/default/grub
+
+    GRUB_CMDLINE_LINUX_DEFAULT="acpi_osi=\"!Windows 2015\""
+
+and create grub config after with the command
+
+    sudo grub-mkconfig -o /boot/grub/grub.cfg
+
+ 
+Cards used
+
+The article was written and is being continuosly tested on three Nvidia Optimus video cards:
+
+    GeForce GT 555M
+    GeForce GT 650M
+    GeForce GT 750M
+
+It was not tested on recent Optimus cards, like GeForce GTX 10-Series Notebooks. There are reports about successful Bumblebee installation on modern GeForce Optimus, though they still may present some problems which are not covered here.
+
+The article was written and tested on PC laptops only. It was never tested on Mac hardware. It may or may not work on Mac computers.
+
+The guide was successfully applied also on the following cards.
+
+    NVS 4200M
+    GeForce GT 640M
+    GeForce 820M
+    GeForce GTX 850M
+    GeForce GTX 860M
+    GeForce 920M
+    GeForce 930M
+    GeForce 940M
+    GeForce 940MX
+    GeForce GTX 960M
+    GeForce GTX 970M
+
+Uninstall Bumblebee
+
+Bumblebee and proprietary Nvidia driver may be removed from Arch and Antergos.
+
+    Stop running bumblebee service:
+
+    sudo systemctl stop bumblebeed
+
+2. Disable bumblebee service from being started on subsequent boot ups:
+
+    sudo systemctl disable bumblebeed
+
+3. Delete all users from bumblebee group. If only the current user was added to it, he may be removed with:
+
+    sudo gpasswd --delete $USER bumblebee
+
+4. When all users have been removed from bumblebee group, the group may be deleted:
+
+    sudo groupdel bumblebee
+
+5. Remove all packages that were installed for Bumblebee and Nvidia, and their dependencies:
+
+    sudo pacman -Rcnsu bumblebee nvidia lib32-nvidia-utils lib32-virtualgl nvidia-settings bbswitch --noconfirm
+
+6. (Optional) Re-install xf86-video-intel driver without unneeded Bumblebee dependencies:
+
+    sudo pacman -Syu xf86-video-intel --noconfirm
+
+7. (Optional) Regenerate initramfs:
+
+    sudo mkinitcpio --preset linux
+
+8. Shutdown the system:
+
+    sudo shutdown -h now
+
+9. Done
+
+ 
+
+Regards
+
+March 2016
+Contributors:
+
+    Justin time
+    Justin time
+    Mirgleich
+    Mirgleich
+    Mo.mashi69
+    Fadi R
+    Xeon.harsh
+    Harsh Lathwal
+    Dustin
+    Dustin Falgout
+    Christophe222
+    Christophe222 
